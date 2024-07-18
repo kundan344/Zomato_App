@@ -71,22 +71,12 @@ pipeline {
             }
         }
         
-        stage('Deploy') {
+        stage('Deploy on k8s cluster') {
             steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-1', toolName: 'docker') {
-                // Kill and remove the existing container if it exists
-                sh """
-                    if [ \$(docker ps -a -q -f name=zomato-app) ]; then
-                        docker kill zomato-app || true
-                        docker rm -f zomato-app || true
-                    fi
-                """
-                // Run the new container
-                sh "docker run --name zomato-app -p 3000:3000 kundankumar344/zomato:latest"
-                    
-                   }
-                    
+                  withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://172.31.3.234:6443') {
+                  sh "kubectl apply -f deploymentservice.yml -n webapps"
+                  sh "kubectl get svc -n webapps"
+}
                 }
             }
         }
